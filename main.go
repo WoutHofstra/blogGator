@@ -2,9 +2,9 @@ package main
 
 
 import (
-	"fmt"
 	"log"
 	"github.com/WoutHofstra/blogGator/internal/config"
+	"os"
 )
 
 func main() {
@@ -13,13 +13,30 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = cfg.SetUser("Wout")
+
+	cfgStruct := &state{}
+
+	cfgStruct.config = &cfg
+
+	cmdStruct := &commands{
+		cmdNames: make(map[string]func(*state, command) error),
+	}
+
+	cmdStruct.register("login", handlerLogin)
+
+	args := os.Args
+	if len(args) < 2 {
+		log.Fatal("Not enough arguments given")
+	}
+	cmdname := args[1]
+	cmdArguments := args[2:]
+
+	newCmdStruct := &command{
+		name:		 cmdname,
+		arguments:	 cmdArguments,
+	}
+	err = cmdStruct.run(cfgStruct, *newCmdStruct)
 	if err != nil {
 		log.Fatal(err)
 	}
-	cfg, err = config.Read()
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(cfg)
 }
