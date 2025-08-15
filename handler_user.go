@@ -77,8 +77,8 @@ func handlerRegister(s *state, cmd command) error {
                 return fmt.Errorf("Set username failed: %w", err)
         }
 
-	fmt.Printf("User created successfully!!")
-	fmt.Printf("Created user: %+v", u)
+	fmt.Printf("Created user: %+v\n", u)
+        fmt.Printf("User created successfully!!\n")
 	return nil
 
 
@@ -95,5 +95,23 @@ func handlerReset(s *state, cmd command) error {
 
 
 	fmt.Println("Database reset!!")
+	return nil
+}
+
+func handlerUsers(s *state, cmd command) error {
+
+        ctx := context.Background()
+
+        users, err := s.db.GetUsers(ctx)
+	if err != nil {
+		return fmt.Errorf("Error: Get users failed: %w", err)
+	}
+	for _, u := range users {
+		if u == s.cfg.CurrentUserName {
+			fmt.Printf("* %v (current)\n", u)
+		} else {
+			fmt.Printf("* %v\n", u)
+		}
+	}
 	return nil
 }
