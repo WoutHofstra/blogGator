@@ -5,7 +5,15 @@ import (
 	"log"
 	"github.com/WoutHofstra/blogGator/internal/config"
 	"os"
+	_ "github.com/lib/pq"
+	"github.com/WoutHofstra/blogGator/internal/database"
+	"database/sql"
 )
+
+type state struct {
+	db 	*database.Queries
+	cfg	*config.Config
+}
 
 func main() {
 
@@ -15,14 +23,24 @@ func main() {
 	}
 
 	cfgStruct := &state{}
+	cfgStruct.cfg = &cfg
 
-	cfgStruct.config = &cfg
+        dbUrl := cfg.DbURL
+        db, err := sql.Open("postgres", dbUrl)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+        cfgStruct.db = database.New(db)
 
 	cmdStruct := &commands{
 		cmdNames: make(map[string]func(*state, command) error),
 	}
 
 	cmdStruct.register("login", handlerLogin)
+	cmdStruct.register("register", handlerRegister)
+	cmdStruct.register("reset", handlerReset)
 
 	args := os.Args
 	if len(args) < 2 {
@@ -35,6 +53,7 @@ func main() {
 		name:		 cmdname,
 		arguments:	 cmdArguments,
 	}
+
 	err = cmdStruct.run(cfgStruct, *newCmdStruct)
 	if err != nil {
 		log.Fatal(err)
