@@ -10,6 +10,7 @@ import (
 	"errors"
 	"context"
 	"github.com/WoutHofstra/blogGator/internal/database"
+	"sort"
 )
 
 func handlerLogin(s *state, cmd command) error {
@@ -86,11 +87,36 @@ func handlerRegister(s *state, cmd command) error {
 
 func handlerReset(s *state, cmd command) error {
 
-        ctx := context.Background()
+	ctx := context.Background()
 
-	err := s.db.ClearDatabase(ctx)
+	files, err := os.ReadDir("sql/schema")
 	if err != nil {
-		os.Exit(1)
+		return fmt.Errorf("Error: read directory failed: %w", err)
+	}
+
+	var filenames []string
+	for _, f := range files {
+		if !f.IsDir() {
+			filenames = append(filenames, f.Name())
+		}
+	}
+	sort.Strings(filenames)
+
+	for _, fname := range filenames {
+		contents, err := os.ReadFile("sql/schema/" + fname)
+		if err != nil {
+			return fmt.Errorf("Error: Couldnt read file: %w, %v", err, fname)
+		}
+
+		queries := strings.Split(string(contents), ";")
+		for _, query := range queries {
+			if query != "" {
+				_, err := s.dbConn.ExecContext(ctx, query)
+				if err != nil {
+					return fmt.Errorf("Error running query: %w\n%v", err, query)
+				}
+			}
+		}
 	}
 
 

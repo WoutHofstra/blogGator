@@ -12,6 +12,7 @@ import (
 
 type state struct {
 	db 	*database.Queries
+	dbConn	*sql.DB
 	cfg	*config.Config
 }
 
@@ -33,6 +34,7 @@ func main() {
 	defer db.Close()
 
         cfgStruct.db = database.New(db)
+	cfgStruct.dbConn = db
 
 	cmdStruct := &commands{
 		cmdNames: make(map[string]func(*state, command) error),
@@ -43,6 +45,8 @@ func main() {
 	cmdStruct.register("reset", handlerReset)
 	cmdStruct.register("users", handlerUsers)
 	cmdStruct.register("agg", handlerAgg)
+	cmdStruct.register("addfeed", handlerFeed)
+	cmdStruct.register("feeds", handlerGetFeeds)
 
 	args := os.Args
 	if len(args) < 2 {
