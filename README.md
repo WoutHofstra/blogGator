@@ -1,5 +1,5 @@
 # blogGator
-gator
+
 
 ![BlogGator Logo](bloggator.png)
 
@@ -15,8 +15,8 @@ First, install postgre and go if you don't have them already
 Then install this CLI with 'go install https://github.com/WoutHofstra/blogGator'
 In your home directory, you have to include a file with the following structure:
 
-{
-  "db_url": "postgres://username:@localhost:5432/database?sslmode=disable"
+{  
+  "db_url": "postgres://username:@localhost:5432/database?sslmode=disable"  
 }
 
 for 'username' use your own name and for 'database' use your database name, which you have made in postgreSQL
