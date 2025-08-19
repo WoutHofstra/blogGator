@@ -15,8 +15,7 @@ func handlerFeed(s *state, cmd command) error {
 
 
         ctx := context.Background()
-	createdAt := time.Now()
-	updatedAt := time.Now()
+	now := time.Now()
         feedName := cmd.arguments[0]
         feedURL := cmd.arguments[1]
 
@@ -26,8 +25,8 @@ func handlerFeed(s *state, cmd command) error {
 
 
 	params:= database.CreateFeedParams {
-		CreatedAt:	createdAt,
-		UpdatedAt:	updatedAt,
+		CreatedAt:	now,
+		UpdatedAt:	now,
 		Name:		feedName,
 		Url:		feedURL,
 		UserID:		feedUserID,
@@ -39,6 +38,32 @@ func handlerFeed(s *state, cmd command) error {
 		os.Exit(1)
 	}
 	fmt.Printf("Feed successfully made! %+v", feed)
+
+	row, err := s.db.GetFeedFromUrl(ctx, feedURL)
+	if err != nil {
+                fmt.Println("Error:", err)
+                return err
+        }
+
+
+
+	feedID := uuid.NullUUID{UUID: row.ID, Valid: true}
+
+	followParams := database.CreateFeedFollowParams {
+                CreatedAt:      now,
+                UpdatedAt:      now,
+		UserID:		feedUserID,
+		FeedID:		feedID,
+	}
+
+
+	_, err = s.db.CreateFeedFollow(ctx, followParams)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return err
+	}
+
+
 	return nil
 }
 
@@ -68,3 +93,53 @@ func handlerGetFeeds(s *state, cmd command) error {
 
 }
 
+
+func handlerFollow(s *state, cmd command) error {
+
+
+	feedUrl := cmd.arguments[0]
+
+	ctx := context.Background()
+        user, _ := s.db.GetUser(ctx, s.cfg.CurrentUserName)
+	feed, _ := s.db.GetFeedFromUrl(ctx, feedUrl)
+	now := time.Now()
+	userID := uuid.NullUUID{UUID: user.ID, Valid: true}
+	feedID := uuid.NullUUID{UUID: feed.ID, Valid: true}
+
+        params := database.CreateFeedFollowParams {
+                CreatedAt:      now,
+                UpdatedAt:      now,
+                UserID:         userID,
+                FeedID:         feedID,
+        }
+
+	s.db.CreateFeedFollow(ctx, params)
+
+	fmt.Println(s.cfg.CurrentUserName)
+	fmt.Println(feed.Name)
+	return nil
+}
+
+func handlerFollowing(s *state, cmd command) error {
+
+	ctx := context.Background()
+	user, err := s.db.GetUser(ctx, s.cfg.CurrentUserName)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return err
+	}
+        userID := uuid.NullUUID{UUID: user.ID, Valid: true}
+
+	res, err := s.db.GetFeedFollowsForUser(ctx, userID)
+        if err != nil {
+                fmt.Println("Error:", err)
+                return err
+        }
+        fmt.Println(len(res))
+
+	for _, f := range res {
+		fmt.Printf("Feed: %v, User: %v", f.FeedName, f.UserName)
+	}
+	return nil
+
+}
