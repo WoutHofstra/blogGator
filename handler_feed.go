@@ -33,7 +33,7 @@ func handlerFeed(s *state, cmd command, user database.User) error {
 		fmt.Printf("Couldnt create feed: %v", err)
 		os.Exit(1)
 	}
-	fmt.Printf("Feed successfully made! %+v", feed)
+	fmt.Printf("Feed successfully made! %+v\n", feed)
 
 	row, err := s.db.GetFeedFromUrl(ctx, feedURL)
 	if err != nil {

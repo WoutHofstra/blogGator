@@ -7,6 +7,7 @@ import (
 	"encoding/xml"
 	"context"
 	"html"
+	"time"
 )
 
 type RSSFeed struct {
@@ -28,14 +29,16 @@ type RSSItem struct {
 
 func handlerAgg(s *state, cmd command) error {
 
-        ctx := context.Background()
-        URL := "https://www.wagslane.dev/index.xml"
-
-	feed, err := fetchFeed(ctx, URL)
+	timeBetweenRequests, err := time.ParseDuration(cmd.arguments[0])
 	if err != nil {
-		return fmt.Errorf("Error: Feed couldnt be fetched: %w", err)
+		fmt.Println(err)
+		return err
 	}
-	fmt.Printf("Feed from %v: %+v", URL, feed)
+	ticker := time.NewTicker(timeBetweenRequests)
+	fmt.Println("Collecting feeds every", timeBetweenRequests)
+	for ;; <-ticker.C {
+		scrapeFeeds(s)
+	}
 	return nil
 }
 
@@ -79,4 +82,21 @@ func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
 
 	return &feed, nil
 
+}
+
+func scrapeFeeds(s *state) {
+
+	ctx := context.Background()
+	feed, err := s.db.GetNextFeedToFetch(ctx)
+	if err != nil {
+		fmt.Println(err)
+	}
+	s.db.MarkFeedFetched(ctx, feed.ID)
+	content, err := fetchFeed(ctx, feed.Url)
+	if err != nil {
+                fmt.Println(err)
+        }
+	for _, c := range content.Channel.Item {
+		fmt.Println(c.Title)
+	}
 }
