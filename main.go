@@ -49,6 +49,7 @@ func main() {
 	cmdStruct.register("feeds", handlerGetFeeds)
 	cmdStruct.register("follow", middlewareLoggedIn(handlerFollow))
 	cmdStruct.register("following", middlewareLoggedIn(handlerFollowing))
+	cmdStruct.register("unfollow", middlewareLoggedIn(handlerUnfollow))
 
 
 	args := os.Args
