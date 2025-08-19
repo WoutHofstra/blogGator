@@ -10,7 +10,7 @@ import (
 )
 
 
-func handlerFeed(s *state, cmd command) error {
+func handlerFeed(s *state, cmd command, user database.User) error {
 
 
 
@@ -18,11 +18,7 @@ func handlerFeed(s *state, cmd command) error {
 	now := time.Now()
         feedName := cmd.arguments[0]
         feedURL := cmd.arguments[1]
-
-        user, err := s.db.GetUser(ctx, s.cfg.CurrentUserName)
-
 	feedUserID := uuid.NullUUID{UUID: user.ID, Valid: true}
-
 
 	params:= database.CreateFeedParams {
 		CreatedAt:	now,
@@ -94,13 +90,12 @@ func handlerGetFeeds(s *state, cmd command) error {
 }
 
 
-func handlerFollow(s *state, cmd command) error {
+func handlerFollow(s *state, cmd command, user database.User) error {
 
 
 	feedUrl := cmd.arguments[0]
 
 	ctx := context.Background()
-        user, _ := s.db.GetUser(ctx, s.cfg.CurrentUserName)
 	feed, _ := s.db.GetFeedFromUrl(ctx, feedUrl)
 	now := time.Now()
 	userID := uuid.NullUUID{UUID: user.ID, Valid: true}
@@ -120,14 +115,9 @@ func handlerFollow(s *state, cmd command) error {
 	return nil
 }
 
-func handlerFollowing(s *state, cmd command) error {
+func handlerFollowing(s *state, cmd command, user database.User) error {
 
 	ctx := context.Background()
-	user, err := s.db.GetUser(ctx, s.cfg.CurrentUserName)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return err
-	}
         userID := uuid.NullUUID{UUID: user.ID, Valid: true}
 
 	res, err := s.db.GetFeedFollowsForUser(ctx, userID)
@@ -138,7 +128,7 @@ func handlerFollowing(s *state, cmd command) error {
         fmt.Println(len(res))
 
 	for _, f := range res {
-		fmt.Printf("Feed: %v, User: %v", f.FeedName, f.UserName)
+		fmt.Printf("Feed: %v, User: %v\n", f.FeedName, f.UserName)
 	}
 	return nil
 
