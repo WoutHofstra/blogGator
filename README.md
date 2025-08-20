@@ -33,4 +33,4 @@ users: shows all of the registered users
 feeds: shows all of the added feeds  
 following: shows all of the feeds the current user is following  
 agg: takes a time as input, and turns on the aggregator showing 1 page per cycle. This time should be in a format like "1s", "1m", "1h", etc.   
-
+browse: takes an integer as input, and shows that many of the added posts. the agg command has to be used before this, otherwise the posts list will be empty  

@@ -50,7 +50,7 @@ func main() {
 	cmdStruct.register("follow", middlewareLoggedIn(handlerFollow))
 	cmdStruct.register("following", middlewareLoggedIn(handlerFollowing))
 	cmdStruct.register("unfollow", middlewareLoggedIn(handlerUnfollow))
-
+	cmdStruct.register("browse", middlewareLoggedIn(handlerBrowse))
 
 	args := os.Args
 	if len(args) < 2 {

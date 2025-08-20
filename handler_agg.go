@@ -8,6 +8,10 @@ import (
 	"context"
 	"html"
 	"time"
+        "github.com/WoutHofstra/blogGator/internal/database"
+        "github.com/google/uuid"
+	"database/sql"
+	"strconv"
 )
 
 type RSSFeed struct {
@@ -84,19 +88,92 @@ func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
 
 }
 
-func scrapeFeeds(s *state) {
+func scrapeFeeds(s *state) error {
 
+	now := time.Now()
 	ctx := context.Background()
 	feed, err := s.db.GetNextFeedToFetch(ctx)
 	if err != nil {
 		fmt.Println(err)
+		return err
 	}
+
 	s.db.MarkFeedFetched(ctx, feed.ID)
 	content, err := fetchFeed(ctx, feed.Url)
 	if err != nil {
                 fmt.Println(err)
+		return err
         }
+        feedID := uuid.NullUUID{UUID: feed.ID, Valid: true}
+
+
 	for _, c := range content.Channel.Item {
+
+        	parsedTime, err := time.Parse(time.RFC1123Z, c.PubDate)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		published_at := sql.NullTime{Time:parsedTime, Valid: true}
+		description := sql.NullString{String: c.Description, Valid: true}
+
 		fmt.Println(c.Title)
+
+		params := database.CreatePostParams {
+			CreatedAt:	now,
+			UpdatedAt:	now,
+			Title:		c.Title,
+			Url:		c.Link,
+			Description:	description,
+			PublishedAt:	published_at,
+			FeedID:		feedID,
+		}
+		_, err = s.db.CreatePost(ctx, params)
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
+	return nil
+}
+
+
+func handlerBrowse (s *state, cmd command, user database.User) error {
+
+	ctx := context.Background()
+	var limit int32
+
+	if len(cmd.arguments) == 0 {
+		limit = 2
+	} else {
+		if cmd.arguments[0] == "0" {
+			limit = 2
+		} else {
+			l, err := strconv.Atoi(cmd.arguments[0])
+			if err != nil {
+				fmt.Println("No valid integer, defaulting to 2")
+				limit = 2
+			} else {
+				limit = int32(l)
+			}
+		}
+	}
+
+	userid := uuid.NullUUID{UUID: user.ID, Valid: true}
+
+	params := database.GetPostForUserParams {
+		UserID:		userid,
+		Limit:		limit,
+	}
+
+	result, err := s.db.GetPostForUser(ctx, params)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	fmt.Printf("Browsing through %v posts\n", len(result))
+	for _, r := range result {
+		fmt.Println(r.Title)
+	}
+
+	return nil
 }
